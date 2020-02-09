@@ -76,19 +76,17 @@ public class CallActivity extends AppCompatActivity implements QBVideoChatSignal
         } else {
             initField();
             initQBRTCClient();
-            prepareToCall();
+//            prepareToCall();
         }
     }
 
-    private void prepareToCall() {
-        QBRTCTypes.QBConferenceType qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_AUDIO;
-
-        Map<String, String> userInfo = new HashMap<>();
-        userInfo.put("key", "value");
-        QBRTCSession session = QBRTCClient.getInstance(this).createNewSessionWithOpponents(qbUsers, qbConferenceType);
-
-        session.startCall(userInfo);
-    }
+//    private void prepareToCall() {
+//        QBRTCTypes.QBConferenceType qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_AUDIO;
+//
+//        QBRTCSession session = QBRTCClient.getInstance(this).createNewSessionWithOpponents(qbUsers, qbConferenceType);
+//
+//        session.startCall(userInfo);
+//    }
 
     private void initQBRTCClient() {
         rtcClient = QBRTCClient.getInstance(this);
