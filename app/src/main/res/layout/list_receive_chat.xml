@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="6dp"
+    android:orientation="vertical">
+
+    <TextView
+        android:id="@+id/txt_name_receive_chat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="6dp"
+        android:textColor="@color/design_default_color_on_secondary"
+        tools:text="Nama Pengirim" />
+
+    <com.github.library.bubbleview.BubbleTextView
+        android:id="@+id/txt_message_receive_chat"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:textColor="@android:color/white"
+        tools:text="ini isi dari pesan dan sebagainya"
+        app:bubbleColor="#1218BF"
+        app:arrowLocation="left"
+        app:arrowHeight="10dp"
+        app:arrowCenter="true"
+        app:angle="8dp"
+        app:arrowWidth="8dp"/>
+
+</LinearLayout>

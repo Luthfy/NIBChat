@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="1dp"
+    android:id="@+id/ll_chat_message_dialog"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/img_user_chat_dialog"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_margin="8dp"
+        android:src="@android:color/darker_gray" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="horizontal"
+            android:weightSum="5">
+
+            <TextView
+                android:id="@+id/txt_name_chat_dialog"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="4dp"
+                android:layout_weight="3"
+                android:maxLines="1"
+                android:textAllCaps="true"
+                android:textColor="@color/design_default_color_on_secondary"
+                android:textColorHighlight="@android:color/secondary_text_dark"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                tools:text="Luthfy Eka Permana" />
+
+            <TextView
+                android:id="@+id/txt_time_chat_dialog"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_marginBottom="4dp"
+                android:layout_weight="2"
+                android:gravity="end"
+                android:textColor="@color/design_default_color_on_secondary"
+                android:textColorHighlight="@android:color/secondary_text_dark"
+                android:textSize="10sp"
+                tools:text="12-12-2020 22.22" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:weightSum="5">
+
+            <TextView
+                android:id="@+id/txt_short_message_chat_dialog"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="4"
+                android:maxLines="1"
+                android:textAllCaps="false"
+                android:textColor="@color/design_default_color_on_secondary"
+                android:textColorHighlight="@android:color/secondary_text_dark"
+                android:textSize="14sp"
+                tools:text="ini untuk isi chat yang mungkin akan menjadi sangat panjang dan dibatasi" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_gravity="center"
+                android:layout_weight="1"
+                android:gravity="center">
+
+                <ImageView
+                    android:id="@+id/img_unread_chat_dialog"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_gravity="center" />
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>
