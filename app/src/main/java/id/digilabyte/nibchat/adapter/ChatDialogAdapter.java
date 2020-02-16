@@ -1,9 +1,15 @@
 package id.digilabyte.nibchat.adapter;
 
+import android.annotation.SuppressLint;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
-import android.text.TextUtils;
+import android.os.Build;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +18,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.amulyakhare.textdrawable.TextDrawable;
@@ -24,6 +32,8 @@ import java.util.ArrayList;
 import id.digilabyte.nibchat.R;
 import id.digilabyte.nibchat.helper.Common;
 import id.digilabyte.nibchat.holder.QBUnreadMessageHolder;
+import id.digilabyte.nibchat.holder.QBUsersHolder;
+import id.digilabyte.nibchat.ui.ChatDialogActivity;
 import id.digilabyte.nibchat.ui.ChatMessageActivity;
 
 public class ChatDialogAdapter extends RecyclerView.Adapter<ChatDialogAdapter.ViewHolder> {
@@ -54,14 +64,13 @@ public class ChatDialogAdapter extends RecyclerView.Adapter<ChatDialogAdapter.Vi
     }
 
 
-    public class ViewHolder extends RecyclerView.ViewHolder {
+    class ViewHolder extends RecyclerView.ViewHolder {
 
         ImageView imgChatIcon, imgUnread;
         TextView txtTitleName, txtShortMessage, txtDateLastMessage;
         LinearLayout llChatDialog;
-        Integer position;
 
-        public ViewHolder(@NonNull View itemView) {
+        ViewHolder(@NonNull View itemView) {
             super(itemView);
             llChatDialog        = itemView.findViewById(R.id.ll_chat_message_dialog);
             imgChatIcon         = itemView.findViewById(R.id.img_user_chat_dialog);
@@ -71,9 +80,9 @@ public class ChatDialogAdapter extends RecyclerView.Adapter<ChatDialogAdapter.Vi
             txtDateLastMessage  = itemView.findViewById(R.id.txt_time_chat_dialog);
         }
 
-        public void bindItem(final QBChatDialog qbChatDialog) {
+        void bindItem(final QBChatDialog qbChatDialog) {
 
-            SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm");
+            @SuppressLint("SimpleDateFormat") SimpleDateFormat format = new SimpleDateFormat("yyyy/MM/dd HH:mm");
             String date;
 
             if (String.valueOf(qbChatDialog.getLastMessageDateSent()).isEmpty()) {
@@ -97,11 +106,17 @@ public class ChatDialogAdapter extends RecyclerView.Adapter<ChatDialogAdapter.Vi
                     .endConfig()
                     .round();
 
-            Integer unReadCount = QBUnreadMessageHolder.getInstance().getBundle().getInt(qbChatDialog.getDialogId());
+            int unReadCount = QBUnreadMessageHolder.getInstance().getBundle().getInt(qbChatDialog.getDialogId());
 
             if (unReadCount > 0) {
-                TextDrawable text_drawable = unread.build(unReadCount.toString(), Color.RED);
+                TextDrawable text_drawable = unread.build(Integer.toString(unReadCount), Color.RED);
                 imgUnread.setImageDrawable(text_drawable);
+
+                Integer unReadId = QBUsersHolder.getInstance().getUserById(qbChatDialog.getUserId()).getId();
+                String unReadName = qbChatDialog.getName();
+                String unReadContent = Common.createChatDialogName(qbChatDialog.getLastMessage());
+
+                showNotifications(unReadId, unReadName, unReadContent);
             }
 
             imgChatIcon.setImageDrawable(drawable);
@@ -109,15 +124,49 @@ public class ChatDialogAdapter extends RecyclerView.Adapter<ChatDialogAdapter.Vi
             txtShortMessage.setText(qbChatDialog.getLastMessage());
             txtDateLastMessage.setText(date);
 
-            llChatDialog.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent intent = new Intent(context, ChatMessageActivity.class);
-                    intent.putExtra(Common.DIALOG_EXTRA, qbChatDialog);
-                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    context.startActivity(intent);
-                }
+            llChatDialog.setOnClickListener(v -> {
+                Intent intent = new Intent(context, ChatMessageActivity.class);
+                intent.putExtra(Common.DIALOG_EXTRA, qbChatDialog);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                context.startActivity(intent);
             });
+        }
+
+        private void showNotifications(Integer unReadId, String unReadName, String unReadContent) {
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent intent = new Intent(context, ChatDialogActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent, 0);
+
+                int importance = NotificationManager.IMPORTANCE_DEFAULT;
+
+                NotificationCompat.Builder builder = new NotificationCompat.Builder(context, unReadName)
+                    .setSmallIcon(R.drawable.logo)
+                    .setContentTitle(unReadName)
+                    .setContentText(unReadContent)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                    .setContentIntent(pendingIntent)
+                    .setOngoing(false)
+                    .setAutoCancel(true);
+
+                NotificationChannel notificationChannel = new NotificationChannel(unReadName, unReadContent, importance);
+                notificationChannel.enableLights(true);
+                notificationChannel.enableVibration(true);
+                notificationChannel.setLightColor(Color.GREEN);
+                notificationChannel.setVibrationPattern(new long[] {500, 500, 500});
+                notificationChannel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+
+
+                NotificationManager notificationManager = context.getSystemService(NotificationManager.class);
+                if (notificationManager != null) {
+                    notificationManager.createNotificationChannel(notificationChannel);
+                }
+
+                NotificationManagerCompat notificationManagerCompat = NotificationManagerCompat.from(context);
+                notificationManagerCompat.notify(unReadId, builder.build());
+
+            }
         }
 
     }

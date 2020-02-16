@@ -1,15 +1,15 @@
 package id.digilabyte.nibchat.ui;
 
-import androidx.annotation.NonNull;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.Manifest;
 import android.app.AlertDialog;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.app.ProgressDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -17,6 +17,13 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.quickblox.auth.QBAuth;
@@ -42,6 +49,7 @@ import org.jivesoftware.smack.SmackException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 
 import id.digilabyte.nibchat.R;
@@ -67,7 +75,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
         setContentView(R.layout.activity_chat_dialog);
 
         getSupportActionBar();
-        getSupportActionBar().setTitle("Chat Dialogs");
+        Objects.requireNonNull(getSupportActionBar()).setTitle("Chat Dialogs");
 
         rcChatDialog = findViewById(R.id.rc_chat_dialog);
         rcChatDialog.setHasFixedSize(true);
@@ -147,7 +155,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
 
             @Override
             public void onError(QBResponseException e) {
-                Log.e("_ERROR_GETUSER", e.getMessage());
+                Log.e("_ERROR_GETUSER", ""+e.getMessage());
             }
         });
 
@@ -180,7 +188,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
                     @Override
                     public void onError(QBResponseException e) {
                         loading.dismiss();
-                        Log.e("_ERROR_LOGIN", e.getMessage());
+                        Log.e("_ERROR_LOGIN", ""+e.getMessage());
                     }
                 });
             }
@@ -188,10 +196,11 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
             @Override
             public void onError(QBResponseException e) {
                 loading.dismiss();
-                Log.e("_ERROR_SESSION", e.getMessage());
+                Log.e("_ERROR_SESSION", ""+e.getMessage());
             }
         });
     }
+
 
     @Override
     public void onClick(View v) {
@@ -203,6 +212,8 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
         super.onResume();
         loadChatDialogs();
     }
+
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -228,30 +239,22 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
         dialog.setTitle("Logout");
         dialog.setMessage("Are you sure?");
 
-        dialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
+        dialog.setPositiveButton("Yes", (dialog1, which) -> {
 
-                try {
-                    QBChatService.getInstance().logout();
-                } catch (SmackException.NotConnectedException e) {
-                    e.printStackTrace();
-                }
-
-                QBChatService.getInstance().destroy();
-                up.clear();
-
-                startActivity(new Intent(ChatDialogActivity.this, LoginActivity.class));
-                finish();
+            try {
+                QBChatService.getInstance().logout();
+            } catch (SmackException.NotConnectedException e) {
+                e.printStackTrace();
             }
+
+            QBChatService.getInstance().destroy();
+            up.clear();
+
+            startActivity(new Intent(ChatDialogActivity.this, LoginActivity.class));
+            finish();
         });
 
-        dialog.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
+        dialog.setNegativeButton("Cancel", (dialog12, which) -> dialog12.dismiss());
 
         dialog.show();
     }
