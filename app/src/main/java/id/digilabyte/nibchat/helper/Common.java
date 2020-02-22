@@ -9,6 +9,9 @@ public class Common {
     public static final String DIALOG_EXTRA = "dialogs";
     public static final String EXTRA_QB_USERS_LIST = "users";
     public static final String EXTRA_IS_INCOMING_CALL = "income_call_fragment";
+    public static final String IS_STARTED_CALL = "is_star_call";
+    public static final String QBCONFRENCE_TYPE = "qb_confrence_type";
+    public static final Integer USER_OPPONENT_MAKS = 4;
 
     public static String createChatDialogName (String input) {
         StringBuilder name = new StringBuilder();

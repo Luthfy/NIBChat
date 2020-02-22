@@ -32,10 +32,12 @@ import com.quickblox.auth.session.QBSession;
 import com.quickblox.chat.QBChatService;
 import com.quickblox.chat.QBIncomingMessagesManager;
 import com.quickblox.chat.QBRestChatService;
+import com.quickblox.chat.QBSignaling;
 import com.quickblox.chat.QBSystemMessagesManager;
 import com.quickblox.chat.exception.QBChatException;
 import com.quickblox.chat.listeners.QBChatDialogMessageListener;
 import com.quickblox.chat.listeners.QBSystemMessageListener;
+import com.quickblox.chat.listeners.QBVideoChatSignalingManagerListener;
 import com.quickblox.chat.model.QBChatDialog;
 import com.quickblox.chat.model.QBChatMessage;
 import com.quickblox.core.QBEntityCallback;
@@ -44,16 +46,21 @@ import com.quickblox.core.exception.QBResponseException;
 import com.quickblox.core.request.QBRequestGetBuilder;
 import com.quickblox.users.QBUsers;
 import com.quickblox.users.model.QBUser;
+import com.quickblox.videochat.webrtc.QBRTCClient;
+import com.quickblox.videochat.webrtc.QBRTCSession;
+import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
 
 import org.jivesoftware.smack.SmackException;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
 import id.digilabyte.nibchat.R;
 import id.digilabyte.nibchat.adapter.ChatDialogAdapter;
+import id.digilabyte.nibchat.helper.Common;
 import id.digilabyte.nibchat.holder.QBChatDialogHolder;
 import id.digilabyte.nibchat.holder.QBUnreadMessageHolder;
 import id.digilabyte.nibchat.holder.QBUsersHolder;
@@ -63,11 +70,15 @@ import pub.devrel.easypermissions.EasyPermissions;
 
 public class ChatDialogActivity extends AppCompatActivity implements View.OnClickListener, QBSystemMessageListener, QBChatDialogMessageListener {
 
+    private static final String TAG = ChatDialogActivity.class.getSimpleName();
     FloatingActionButton floatingActionButton;
     RecyclerView rcChatDialog;
     UserPreferences up;
+    QBChatService qbChatService;
+    QBRTCClient qbrtcClient;
 
     private static final int ALL_PERMISSONS = 777;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -90,6 +101,8 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
 
         createSessionForChat();
         loadChatDialogs();
+
+        qbrtcClient.prepareToProcessCalls();
 
     }
 
@@ -133,12 +146,16 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
     }
 
     private void createSessionForChat() {
+
         final ProgressDialog loading = new ProgressDialog(this, ProgressDialog.THEME_HOLO_LIGHT);
         loading.setMessage("Please wait ...");
         loading.setCanceledOnTouchOutside(false);
         loading.show();
 
         up = new UserPreferences(this);
+
+        qbChatService = QBChatService.getInstance();
+        qbrtcClient = QBRTCClient.getInstance(ChatDialogActivity.this);
 
         String user, password;
 
@@ -166,6 +183,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
         QBAuth.createSession(qbUser).performAsync(new QBEntityCallback<QBSession>() {
             @Override
             public void onSuccess(QBSession qbSession, Bundle bundle) {
+
                 qbUser.setId(qbSession.getUserId());
                 try {
                     qbUser.setPassword(BaseService.getBaseService().getToken());
@@ -173,7 +191,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
                     e.printStackTrace();
                 }
 
-                QBChatService.getInstance().login(qbUser, new QBEntityCallback() {
+                qbChatService.login(qbUser, new QBEntityCallback() {
                     @Override
                     public void onSuccess(Object o, Bundle bundle) {
                         loading.dismiss();
@@ -183,12 +201,65 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
 
                         QBIncomingMessagesManager qbIncomingMessagesManager = QBChatService.getInstance().getIncomingMessagesManager();
                         qbIncomingMessagesManager.addDialogMessageListener(ChatDialogActivity.this);
+
+                        qbChatService.getVideoChatWebRTCSignalingManager().addSignalingManagerListener((qbSignaling, b) -> {
+                            Log.d(TAG, "signaling is created : "+b+" QBSignaling is : "+qbSignaling);
+                            if(!b) {
+                                qbrtcClient.addSignaling(qbSignaling);
+                                Log.d(TAG, "signaling was added");
+                            }
+                        });
                     }
 
                     @Override
                     public void onError(QBResponseException e) {
                         loading.dismiss();
                         Log.e("_ERROR_LOGIN", ""+e.getMessage());
+                    }
+                });
+
+                qbrtcClient.addSessionCallbacksListener(new QBRTCClientSessionCallbacks() {
+                    @Override
+                    public void onReceiveNewSession(QBRTCSession qbrtcSession) {
+                        Log.d(TAG, "onReceiveNewSession is receive : "+qbrtcSession.getCallerID());
+                        Toast.makeText(ChatDialogActivity.this, "Anda Mendapat Panggilan dari "+ qbrtcSession.getCallerID(), Toast.LENGTH_SHORT).show();
+
+                        CallActivity.toChatForOpenCall(ChatDialogActivity.this, true);
+                    }
+
+                    @Override
+                    public void onUserNoActions(QBRTCSession qbrtcSession, Integer integer) {
+
+                    }
+
+                    @Override
+                    public void onSessionStartClose(QBRTCSession qbrtcSession) {
+
+                    }
+
+                    @Override
+                    public void onUserNotAnswer(QBRTCSession qbrtcSession, Integer integer) {
+
+                    }
+
+                    @Override
+                    public void onCallRejectByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
+
+                    }
+
+                    @Override
+                    public void onCallAcceptByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
+
+                    }
+
+                    @Override
+                    public void onReceiveHangUpFromUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
+
+                    }
+
+                    @Override
+                    public void onSessionClosed(QBRTCSession qbrtcSession) {
+
                     }
                 });
             }
@@ -225,13 +296,11 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
-        switch (id) {
-            case R.id.menu_logout:
-                logoutMethod();
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        if (id != R.id.menu_logout) {
+            return super.onOptionsItemSelected(item);
         }
+        logoutMethod();
+        return true;
     }
 
     private void logoutMethod() {

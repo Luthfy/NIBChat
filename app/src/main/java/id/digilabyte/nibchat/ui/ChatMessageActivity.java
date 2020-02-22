@@ -58,16 +58,18 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_message);
 
-        QBChatDialog qbChatDialog = (QBChatDialog)getIntent().getSerializableExtra(Common.DIALOG_EXTRA);
+        QBChatDialog qbChatDialog = (QBChatDialog) getIntent().getSerializableExtra(Common.DIALOG_EXTRA);
 
         String nameReceiver = "";
 
-        if (qbChatDialog.getType() == QBDialogType.PRIVATE) {
-            nameReceiver = qbChatDialog.getName();
-        } else if (qbChatDialog.getType() == QBDialogType.GROUP) {
-            nameReceiver = qbChatDialog.getName();
-        } else if (qbChatDialog.getType() == QBDialogType.PUBLIC_GROUP) {
-            nameReceiver = qbChatDialog.getName();
+        if (qbChatDialog != null) {
+            if (qbChatDialog.getType() == QBDialogType.PRIVATE) {
+                nameReceiver = qbChatDialog.getName();
+            } else if (qbChatDialog.getType() == QBDialogType.GROUP) {
+                nameReceiver = qbChatDialog.getName();
+            } else if (qbChatDialog.getType() == QBDialogType.PUBLIC_GROUP) {
+                nameReceiver = qbChatDialog.getName();
+            }
         }
 
         getSupportActionBar();
@@ -122,7 +124,10 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
 
     private void initChatDialogs() {
         qbChatDialog = (QBChatDialog)getIntent().getSerializableExtra(Common.DIALOG_EXTRA);
-        qbChatDialog.initForChat(QBChatService.getInstance());
+
+        if (qbChatDialog != null) {
+            qbChatDialog.initForChat(QBChatService.getInstance());
+        }
 
         QBIncomingMessagesManager incomingMessages = QBChatService.getInstance().getIncomingMessagesManager();
         incomingMessages.addDialogMessageListener(new QBChatDialogMessageListener() {
@@ -265,16 +270,17 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
+        Intent intent = new Intent(ChatMessageActivity.this, CallActivity.class);
+        intent.putExtra(Common.EXTRA_QB_USERS_LIST, qbChatDialog);
+        intent.putExtra(Common.IS_STARTED_CALL, true);
         switch (item.getItemId()) {
             case R.id.menu_call:
-                Intent intentCall = new Intent(ChatMessageActivity.this, CallActivity.class);
-                intentCall.putExtra(Common.EXTRA_QB_USERS_LIST, qbChatDialog);
-                startActivity(intentCall);
+                intent.putExtra(Common.QBCONFRENCE_TYPE, "audio");
+                startActivity(intent);
                 return true;
             case R.id.menu_video_call:
-                Intent intentVideo = new Intent(ChatMessageActivity.this, VideoCallActivity.class);
-                intentVideo.putExtra(Common.EXTRA_QB_USERS_LIST, qbChatDialog);
-                startActivity(intentVideo);
+                intent.putExtra(Common.QBCONFRENCE_TYPE, "video");
+                startActivity(intent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
