@@ -158,13 +158,18 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             }
         });
 
+        TextView username = findViewById(R.id.user_opponent);
+        username.setText(QBUsersHolder.getInstance().getUserById(qbrtcSession.getCallerID()).getFullName());
+
         qbrtcClient.prepareToProcessCalls();
 
+        qbrtcSession.addSessionCallbacksListener(this);
+        qbrtcSession.addVideoTrackCallbacksListener(this);
         qbrtcClient.addSessionCallbacksListener(this);
 
         btnCall.setOnClickListener(v -> {
-            qbrtcSession.rejectCall(new HashMap<>());
-            onBackPressed();
+            Log.d(TAG, "button Accept is clicked");
+            qbrtcSession.acceptCall(new HashMap<>());
         });
     }
 
@@ -265,6 +270,17 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     @Override
     public void onConnectedToUser(BaseSession baseSession, Integer integer) {
         Log.d(TAG, "output from onConnectedToUser : "+baseSession.getSessionID());
+
+        if (!doCallUser) {
+            btnCall.setBackgroundResource(R.mipmap.ic_call_end);
+            btnCall.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    qbrtcSession.rejectCall(new HashMap<>());
+                    onBackPressed();
+                }
+            });
+        }
     }
 
     @Override
@@ -312,6 +328,7 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     @Override
     public void onSessionClosed(QBRTCSession qbrtcSession) {
         Log.d(TAG, "output from onSessionClosed : "+qbrtcSession.getSessionID());
+        onBackPressed();
     }
 
     // client
@@ -331,5 +348,6 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     @Override
     public void onSessionStartClose(QBRTCSession qbrtcSession) {
         Log.d(TAG, "onSessionStartClose : "+qbrtcSession.getSessionID());
+        onBackPressed();
     }
 }
