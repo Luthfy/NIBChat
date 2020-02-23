@@ -13,6 +13,11 @@ public class Common {
     public static final String QBCONFRENCE_TYPE = "qb_confrence_type";
     public static final Integer USER_OPPONENT_MAKS = 4;
     public static final String SESSION_CHAT = "qb_chat_session";
+    public static final String EXTRA_PENDING_INTENT = "pending_intent";
+    public static final String EXTRA_COMMAND_TO_SERVICE = "extra_command_service";
+    public static final int COMMAND_LOGOUT = 2;
+    public static final int COMMAND_LOGIN = 1;
+    public static final int COMMAND_NOT_FOUND = 0;
 
     public static String createChatDialogName (String input) {
         StringBuilder name = new StringBuilder();

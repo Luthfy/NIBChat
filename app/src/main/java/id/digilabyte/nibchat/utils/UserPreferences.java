@@ -3,6 +3,8 @@ package id.digilabyte.nibchat.utils;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.quickblox.videochat.webrtc.QBRTCSession;
+
 public class UserPreferences {
 
     private final static String PREFS_FILENAME = "NIBCHAT";

@@ -52,6 +52,7 @@ import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
 
 import org.jivesoftware.smack.SmackException;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Map;
@@ -222,12 +223,13 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
                     @Override
                     public void onReceiveNewSession(QBRTCSession qbrtcSession) {
                         Log.d(TAG, "onReceiveNewSession is receive : "+qbrtcSession.getCallerID());
-                        Toast.makeText(ChatDialogActivity.this, "Anda Mendapat Panggilan dari "+ qbrtcSession.getCallerID(), Toast.LENGTH_SHORT).show();
+
+                        Toast.makeText(ChatDialogActivity.this, "Anda Mendapat Panggilan dari "+ QBUsersHolder.getInstance().getUserById(qbrtcSession.getCallerID()).getFullName(), Toast.LENGTH_LONG).show();
 
                         Intent intent = new Intent(ChatDialogActivity.this, CallActivity.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                         intent.putExtra(Common.IS_STARTED_CALL, false);
-                        intent.putExtra(Common.SESSION_CHAT, qbSession);
+                        intent.putExtra(Common.SESSION_CHAT, qbrtcSession.getSessionID());
                         startActivity(intent);
                     }
 
