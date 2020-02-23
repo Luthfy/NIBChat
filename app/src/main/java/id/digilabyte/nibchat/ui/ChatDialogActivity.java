@@ -224,7 +224,11 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
                         Log.d(TAG, "onReceiveNewSession is receive : "+qbrtcSession.getCallerID());
                         Toast.makeText(ChatDialogActivity.this, "Anda Mendapat Panggilan dari "+ qbrtcSession.getCallerID(), Toast.LENGTH_SHORT).show();
 
-                        CallActivity.toChatForOpenCall(ChatDialogActivity.this, true);
+                        Intent intent = new Intent(ChatDialogActivity.this, CallActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                        intent.putExtra(Common.IS_STARTED_CALL, false);
+                        intent.putExtra(Common.SESSION_CHAT, qbSession);
+                        startActivity(intent);
                     }
 
                     @Override

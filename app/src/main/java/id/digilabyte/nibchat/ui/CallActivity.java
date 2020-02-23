@@ -57,7 +57,7 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     private QBRTCClient qbrtcClient;
     private QBChatService qbChatService;
     private QBRTCSession qbrtcSession;
-    private static QBChatDialog qbChatDialog;
+    private QBChatDialog qbChatDialog;
     private ArrayList<QBUser> qbUsers = new ArrayList<>();
     private QBRTCTypes.QBConferenceType qbConferenceType;
     protected ArrayList<Integer> userOpponents = new ArrayList<>();
@@ -75,65 +75,59 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             Manifest.permission.ACCESS_WIFI_STATE
     };
 
-    public static void toChatForOpenCall(Context context, boolean isIncomingCall) {
-        Log.d("dialog_extra", qbChatDialog.getType().toString());
-        Intent intent = new Intent(context, ChatMessageActivity.class);
-        intent.putExtra(Common.DIALOG_EXTRA, qbChatDialog);
-        intent.putExtra(Common.EXTRA_IS_INCOMING_CALL, isIncomingCall);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        context.startActivity(intent);
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_call);
-
-        boolean isHasPermission = EasyPermissions.hasPermissions(this, perms);
-
-        if (!isHasPermission) {
-            methodRequiresTwoPermission();
-        } else {
-            initField();
-            initQBRTCClient();
-        }
-
-        qbrtcClient.prepareToProcessCalls();
-
-        if (doCallUser) {
-            qbrtcSession.startCall(new HashMap<>());
-        } else {
-            Toast.makeText(this, "In Coming Call", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void initQBRTCClient() {
-        qbrtcSession.addSessionCallbacksListener(this);
-        qbrtcSession.addVideoTrackCallbacksListener(this);
-        qbrtcClient.addSessionCallbacksListener(this);
-    }
-
-    private void initField() {
-
-        Objects.requireNonNull(getSupportActionBar()).hide();
 
         if (getIntent().getExtras() == null) {
             onBackPressed();
             finish();
         }
 
+        initField();
+    }
+
+    private void initField() {
+
+        Objects.requireNonNull(getSupportActionBar()).hide();
+
         btnCall                     = findViewById(R.id.button_action_call);
         qbrtcSurfaceViewOpponent    = findViewById(R.id.opponent);
         qbrtcSurfaceViewLocal       = findViewById(R.id.local);
+
+        boolean isHasPermission = EasyPermissions.hasPermissions(this, perms);
+
+        if (!isHasPermission) {
+            methodRequiresTwoPermission();
+        }
+
+        qbChatService   = QBChatService.getInstance();
+        qbrtcClient     = QBRTCClient.getInstance(CallActivity.this);
 
         // catch call action
         doCallUser = getIntent().getBooleanExtra(Common.IS_STARTED_CALL, true);
 
         if (doCallUser) {
             btnCall.setBackgroundResource(R.mipmap.ic_call_end);
+            startCall();
         } else {
             btnCall.setBackgroundResource(R.mipmap.ic_call_start);
+            openCall();
         }
+
+        QBRTCConfig.setDialingTimeInterval(10000);
+        QBRTCConfig.setMaxOpponentsCount(Common.USER_OPPONENT_MAKS);
+        QBRTCConfig.setDebugEnabled(true);
+
+        Log.d(TAG, "Init Field Activity, Do Call User : "+doCallUser);
+    }
+
+    private void openCall() {
+
+    }
+
+    private void startCall() {
 
         // catch user
         qbChatDialog = (QBChatDialog) getIntent().getSerializableExtra(Common.EXTRA_QB_USERS_LIST);
@@ -168,15 +162,19 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             Toast.makeText(this, "Panggilan Video Sedang Dijalankan", Toast.LENGTH_SHORT).show();
         }
 
-        qbChatService   = QBChatService.getInstance();
-        qbrtcClient     = QBRTCClient.getInstance(CallActivity.this);
         qbrtcSession    = qbrtcClient.createNewSessionWithOpponents(userOpponents, qbConferenceType);
 
-        QBRTCConfig.setDialingTimeInterval(10000);
-        QBRTCConfig.setMaxOpponentsCount(Common.USER_OPPONENT_MAKS);
-        QBRTCConfig.setDebugEnabled(true);
+        qbrtcSession.startCall(new HashMap<>());
+
+        initQBRTCClient();
 
         Log.d(TAG, "Session is created : "+qbrtcSession.getSessionID());
+    }
+
+    private void initQBRTCClient() {
+        qbrtcSession.addSessionCallbacksListener(this);
+        qbrtcSession.addVideoTrackCallbacksListener(this);
+        qbrtcClient.addSessionCallbacksListener(this);
     }
 
     @AfterPermissionGranted(REQUEST_PERMISSION_SETTING)
@@ -253,74 +251,3 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
     }
 }
-//
-////    private void prepareToCall() {
-////        QBRTCTypes.QBConferenceType qbConferenceType = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_AUDIO;
-////
-////        QBRTCSession session = QBRTCClient.getInstance(this).createNewSessionWithOpponents(qbUsers, qbConferenceType);
-////
-////        session.startCall(userInfo);
-////    }
-//
-//    private void initQBRTCClient() {
-//        rtcClient = QBRTCClient.getInstance(this);
-//        QBChatService.getInstance().getVideoChatWebRTCSignalingManager().addSignalingManagerListener(this);
-//
-//        QBRTCConfig.setMaxOpponentsCount(QBRTCConfig.getMaxOpponentsCount());
-//        setSettingForMultiCall();
-//        QBRTCConfig.setDebugEnabled(true);
-//
-//        rtcClient.addSessionCallbacksListener(this);
-//        rtcClient.prepareToProcessCalls();
-//    }
-//
-//    private void setSettingForMultiCall() {
-//        if (qbUsers.size() == 2) {
-//            QBRTCMediaConfig.setVideoWidth(QBRTCMediaConfig.VideoQuality.VGA_VIDEO.width);
-//            QBRTCMediaConfig.setVideoHeight(QBRTCMediaConfig.VideoQuality.VGA_VIDEO.height);
-//        } else {
-//            QBRTCMediaConfig.setVideoWidth(QBRTCMediaConfig.VideoQuality.QBGA_VIDEO.width);
-//            QBRTCMediaConfig.setVideoHeight(QBRTCMediaConfig.VideoQuality.QBGA_VIDEO.height);
-//            QBRTCMediaConfig.setVideoHWAcceleration(false);
-//        }
-//    }
-//
-//    private void initField() {
-//        QBChatDialog qbChatDialog = (QBChatDialog) getIntent().getSerializableExtra(Common.EXTRA_QB_USERS_LIST);
-//        qbUsers = QBUsersHolder.getInstance().getUserByIds(qbChatDialog.getOccupants());
-//    }
-//
-
-//
-//    @Override
-//    public void signalingCreated(QBSignaling qbSignaling, boolean b) {
-//        if (!b) {
-//            rtcClient.addSignaling((QBSignaling) qbSignaling);
-//        }
-//    }
-//
-//    @Override
-//    public void onUserNotAnswer(QBRTCSession qbrtcSession, Integer integer) {
-//
-//    }
-//
-//    @Override
-//    public void onCallRejectByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
-//
-//    }
-//
-//    @Override
-//    public void onCallAcceptByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
-//
-//    }
-//
-//    @Override
-//    public void onReceiveHangUpFromUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
-//
-//    }
-//
-//    @Override
-//    public void onSessionClosed(QBRTCSession qbrtcSession) {
-//
-//    }
-//}

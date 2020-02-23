@@ -32,6 +32,8 @@ import com.quickblox.chat.request.QBMessageGetBuilder;
 import com.quickblox.chat.request.QBMessageUpdateBuilder;
 import com.quickblox.core.QBEntityCallback;
 import com.quickblox.core.exception.QBResponseException;
+import com.quickblox.videochat.webrtc.QBRTCTypes;
+
 import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smackx.muc.DiscussionHistory;
 import java.util.ArrayList;
@@ -43,10 +45,14 @@ import id.digilabyte.nibchat.holder.QBChatMessageHolder;
 
 public class ChatMessageActivity extends AppCompatActivity implements View.OnClickListener, QBChatDialogMessageListener {
 
+    private String TAG = ChatMessageActivity.class.getSimpleName();
     QBChatDialog qbChatDialog;
     RecyclerView rcChatMessage;
     ImageButton submitButton;
     EditText edtContent;
+
+    String type = "";
+    boolean isInComingCall = false;
 
     ChatMessageAdapter adapter;
 
@@ -58,7 +64,13 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat_message);
 
-        QBChatDialog qbChatDialog = (QBChatDialog) getIntent().getSerializableExtra(Common.DIALOG_EXTRA);
+        if (getIntent().getExtras() == null) {
+            Log.d(TAG, "Intent is null");
+            finish();
+        }
+
+        isInComingCall = getIntent().getBooleanExtra(Common.EXTRA_IS_INCOMING_CALL, false);
+        qbChatDialog = (QBChatDialog)getIntent().getSerializableExtra(Common.DIALOG_EXTRA);
 
         String nameReceiver = "";
 
@@ -96,6 +108,14 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
         submitButton.setOnClickListener(this);
     }
 
+    private void openCallActivity() {
+        Intent intent = new Intent(ChatMessageActivity.this, CallActivity.class);
+        intent.putExtra(Common.EXTRA_QB_USERS_LIST, qbChatDialog);
+        intent.putExtra(Common.IS_STARTED_CALL, false);
+        intent.putExtra(Common.QBCONFRENCE_TYPE, type);
+        startActivity(intent);
+    }
+
     private void retrieveMessage() {
         QBMessageGetBuilder qbMessageGetBuilder = new QBMessageGetBuilder();
         qbMessageGetBuilder.setLimit(500);
@@ -123,7 +143,6 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
     }
 
     private void initChatDialogs() {
-        qbChatDialog = (QBChatDialog)getIntent().getSerializableExtra(Common.DIALOG_EXTRA);
 
         if (qbChatDialog != null) {
             qbChatDialog.initForChat(QBChatService.getInstance());

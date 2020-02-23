@@ -12,6 +12,7 @@ public class Common {
     public static final String IS_STARTED_CALL = "is_star_call";
     public static final String QBCONFRENCE_TYPE = "qb_confrence_type";
     public static final Integer USER_OPPONENT_MAKS = 4;
+    public static final String SESSION_CHAT = "qb_chat_session";
 
     public static String createChatDialogName (String input) {
         StringBuilder name = new StringBuilder();
