@@ -224,7 +224,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
                     public void onReceiveNewSession(QBRTCSession qbrtcSession) {
                         Log.d(TAG, "onReceiveNewSession is receive : "+qbrtcSession.getCallerID());
 
-                        Toast.makeText(ChatDialogActivity.this, "Anda Mendapat Panggilan dari "+ QBUsersHolder.getInstance().getUserById(qbrtcSession.getCallerID()).getFullName(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ChatDialogActivity.this, "Anda Mendapat Panggilan dari "+ QBUsersHolder.getInstance().getUserById(qbrtcSession.getCallerID()).getFullName(), Toast.LENGTH_SHORT).show();
 
                         Intent intent = new Intent(ChatDialogActivity.this, CallActivity.class);
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);

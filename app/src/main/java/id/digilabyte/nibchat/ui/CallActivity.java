@@ -38,6 +38,7 @@ import com.quickblox.videochat.webrtc.view.QBRTCSurfaceView;
 import com.quickblox.videochat.webrtc.view.QBRTCVideoTrack;
 
 import org.webrtc.EglBase;
+import org.webrtc.VideoRenderer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -80,15 +81,6 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             Manifest.permission.ACCESS_WIFI_STATE
     };
 
-    public QBRTCSession getQbrtcSession() {
-        return qbrtcSession;
-    }
-
-    public void setQbrtcSession(QBRTCSession qbrtcSession) {
-        this.qbrtcSession = qbrtcSession;
-        Log.d(TAG, "SET QBRTSESSION : " + this.qbrtcSession.getSessionID());
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -119,6 +111,7 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
         qbChatService   = QBChatService.getInstance();
         qbrtcClient     = QBRTCClient.getInstance(CallActivity.this);
+        eglContext      = qbrtcClient.getEglContext();
 
         // catch call action
         doCallUser = getIntent().getBooleanExtra(Common.IS_STARTED_CALL, true);
@@ -165,7 +158,12 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
         qbrtcSession.addSessionCallbacksListener(this);
         qbrtcSession.addVideoTrackCallbacksListener(this);
+
         qbrtcClient.addSessionCallbacksListener(this);
+
+        qbrtcSurfaceViewOpponent.init(eglContext.getEglBaseContext(), null);
+        qbrtcSurfaceViewLocal.init(eglContext.getEglBaseContext(), null);
+
 
         btnCall.setOnClickListener(v -> {
             Log.d(TAG, "button Accept is clicked");
@@ -210,9 +208,12 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
         qbrtcSession    = qbrtcClient.createNewSessionWithOpponents(userOpponents, qbConferenceType);
 
+        qbrtcSession.addSessionCallbacksListener(this);
+        qbrtcSession.addVideoTrackCallbacksListener(this);
+
         qbrtcSession.startCall(new HashMap<>());
 
-        initQBRTCClient();
+
         qbrtcClient.addSessionCallbacksListener(this);
 
         btnCall.setOnClickListener(new View.OnClickListener() {
@@ -223,14 +224,16 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
                 qbrtcSession.removeSignalingCallback(new QBRTCSignalingCallback() {
                     @Override
                     public void onSuccessSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer integer) {
-
+                        Log.d(TAG, "onSuccessSendingPacket "+qbSignalCMD.getValue());
                     }
 
                     @Override
                     public void onErrorSendingPacket(QBSignalingSpec.QBSignalCMD qbSignalCMD, Integer integer, QBRTCSignalException e) {
-
+                        Log.d(TAG, "onErrorSendingPacket "+qbSignalCMD.getValue());
                     }
                 });
+
+                qbrtcClient.destroy();
 
                 startActivity(new Intent(CallActivity.this, ChatDialogActivity.class));
                 finish();
@@ -238,11 +241,6 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
         });
 
         Log.d(TAG, "Session is created : "+qbrtcSession.getSessionID());
-    }
-
-    private void initQBRTCClient() {
-        qbrtcSession.addSessionCallbacksListener(this);
-        qbrtcSession.addVideoTrackCallbacksListener(this);
     }
 
     @AfterPermissionGranted(REQUEST_PERMISSION_SETTING)
@@ -271,6 +269,8 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     public void onConnectedToUser(BaseSession baseSession, Integer integer) {
         Log.d(TAG, "output from onConnectedToUser : "+baseSession.getSessionID());
 
+        Toast.makeText(CallActivity.this, "Panggilan diterima", Toast.LENGTH_SHORT).show();
+
         if (!doCallUser) {
             btnCall.setBackgroundResource(R.mipmap.ic_call_end);
             btnCall.setOnClickListener(new View.OnClickListener() {
@@ -286,43 +286,72 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     @Override
     public void onDisconnectedFromUser(BaseSession baseSession, Integer integer) {
         Log.d(TAG, "output from onDisconnectedFromUser : "+baseSession.getSessionID());
+
+        Toast.makeText(CallActivity.this, "Panggilan dihentikan", Toast.LENGTH_SHORT).show();
     }
 
     @Override
     public void onConnectionClosedForUser(BaseSession baseSession, Integer integer) {
         Log.d(TAG, "output from onConnectionClosedForUser : "+baseSession.getSessionID());
+
+        Toast.makeText(CallActivity.this, "Panggilan dihentikan", Toast.LENGTH_SHORT).show();
+
+        qbrtcSurfaceViewOpponent.release();
+        qbrtcSurfaceViewLocal.release();
     }
 
     // session video call back
     @Override
     public void onLocalVideoTrackReceive(BaseSession baseSession, QBRTCVideoTrack qbrtcVideoTrack) {
         Log.d(TAG, "output from onLocalVideoTrackReceive : "+qbrtcVideoTrack.toString());
+
+        QBRTCSession userSession = qbrtcClient.getSession(baseSession.getSessionID());
+        Integer userId = QBUsersHolder.getInstance().getUserByIds(userSession.getOpponents()).get(1).getId();
+
+        fillVideoView(userId, qbrtcSurfaceViewLocal, qbrtcVideoTrack);
     }
 
     @Override
     public void onRemoteVideoTrackReceive(BaseSession baseSession, QBRTCVideoTrack qbrtcVideoTrack, Integer integer) {
         Log.d(TAG, "output from onRemoteVideoTrackReceive : "+qbrtcVideoTrack.toString());
+
+        QBRTCSession userSession = qbrtcClient.getSession(baseSession.getSessionID());
+        Integer userId = QBUsersHolder.getInstance().getUserByIds(userSession.getOpponents()).get(1).getId();
+
+        fillVideoView(userId, qbrtcSurfaceViewOpponent, qbrtcVideoTrack);
     }
 
     // session call back
     @Override
     public void onUserNotAnswer(QBRTCSession qbrtcSession, Integer integer) {
         Log.d(TAG, "output from onUserNotAnswer : "+qbrtcSession.getSessionID());
+
     }
 
     @Override
     public void onCallRejectByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
         Log.d(TAG, "output from onCallRejectByUser : "+qbrtcSession.getSessionID());
+
+        Toast.makeText(CallActivity.this, "Panggilan telah ditolak oleh ", Toast.LENGTH_SHORT).show();
+
+        onBackPressed();
     }
 
     @Override
     public void onCallAcceptByUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
         Log.d(TAG, "output from onCallAcceptByUser : "+qbrtcSession.getSessionID());
+
+        Toast.makeText(CallActivity.this, "Panggilan telah diterima oleh ", Toast.LENGTH_SHORT).show();
+
     }
 
     @Override
     public void onReceiveHangUpFromUser(QBRTCSession qbrtcSession, Integer integer, Map<String, String> map) {
         Log.d(TAG, "output from onReceiveHangUpFromUser : "+qbrtcSession.getSessionID());
+
+        Toast.makeText(CallActivity.this, "Panggilan telah diakhiri oleh ", Toast.LENGTH_SHORT).show();
+
+        onBackPressed();
     }
 
     @Override
@@ -349,5 +378,16 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     public void onSessionStartClose(QBRTCSession qbrtcSession) {
         Log.d(TAG, "onSessionStartClose : "+qbrtcSession.getSessionID());
         onBackPressed();
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        startActivity(new Intent(CallActivity.this, ChatDialogActivity.class));
+        finish();
+    }
+
+    private void fillVideoView(int userId, QBRTCSurfaceView videoView, QBRTCVideoTrack videoTrack) {
+        videoTrack.addRenderer(new VideoRenderer(videoView));
     }
 }

@@ -7,19 +7,25 @@
     tools:context=".ui.CallActivity"
     android:background="@color/colorWhiteSecondaryBackground">
 
-    <com.quickblox.videochat.webrtc.view.QBRTCSurfaceView
-        android:id="@+id/opponent"
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:weightSum="2">
 
-    <com.quickblox.videochat.webrtc.view.QBRTCSurfaceView
-        android:id="@+id/local"
-        android:layout_marginEnd="16dp"
-        android:layout_marginTop="16dp"
-        android:layout_width="100dp"
-        android:layout_height="150dp"
-        android:layout_gravity="top|end"
-        android:layout_marginRight="16dp" />
+        <com.quickblox.videochat.webrtc.view.QBRTCSurfaceView
+            android:id="@+id/opponent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <com.quickblox.videochat.webrtc.view.QBRTCSurfaceView
+            android:id="@+id/local"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="top|end"
+            android:layout_weight="1" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/user_opponent"
