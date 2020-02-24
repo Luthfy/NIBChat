@@ -1,5 +1,7 @@
 package id.digilabyte.nibchat.helper;
 
+import android.content.Intent;
+
 import com.quickblox.users.model.QBUser;
 
 import id.digilabyte.nibchat.holder.QBUsersHolder;
@@ -18,6 +20,7 @@ public class Common {
     public static final int COMMAND_LOGOUT = 2;
     public static final int COMMAND_LOGIN = 1;
     public static final int COMMAND_NOT_FOUND = 0;
+    public static final String CURRENT_USER = "current_user";
 
     public static String createChatDialogName (String input) {
         StringBuilder name = new StringBuilder();

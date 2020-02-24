@@ -292,6 +292,7 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
         Intent intent = new Intent(ChatMessageActivity.this, CallActivity.class);
         intent.putExtra(Common.EXTRA_QB_USERS_LIST, qbChatDialog);
         intent.putExtra(Common.IS_STARTED_CALL, true);
+        intent.putExtra(Common.CURRENT_USER, String.valueOf(qbChatDialog.getUserId()));
         switch (item.getItemId()) {
             case R.id.menu_call:
                 intent.putExtra(Common.QBCONFRENCE_TYPE, "audio");

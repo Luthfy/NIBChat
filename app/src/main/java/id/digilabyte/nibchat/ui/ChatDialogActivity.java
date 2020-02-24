@@ -230,6 +230,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
                         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                         intent.putExtra(Common.IS_STARTED_CALL, false);
                         intent.putExtra(Common.SESSION_CHAT, qbrtcSession.getSessionID());
+                        intent.putExtra(Common.CURRENT_USER, String.valueOf(qbSession.getUserId()));
                         startActivity(intent);
                     }
 
