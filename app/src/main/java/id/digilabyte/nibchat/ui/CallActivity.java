@@ -8,6 +8,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.telecom.Call;
 import android.telecom.InCallService;
 import android.util.Log;
 import android.view.View;
@@ -22,12 +23,14 @@ import com.quickblox.chat.listeners.QBVideoChatSignalingManagerListener;
 import com.quickblox.chat.model.QBChatDialog;
 import com.quickblox.users.model.QBUser;
 import com.quickblox.videochat.webrtc.BaseSession;
+import com.quickblox.videochat.webrtc.QBRTCAudioTrack;
 import com.quickblox.videochat.webrtc.QBRTCClient;
 import com.quickblox.videochat.webrtc.QBRTCConfig;
 import com.quickblox.videochat.webrtc.QBRTCMediaConfig;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
 import com.quickblox.videochat.webrtc.QBSignalingSpec;
+import com.quickblox.videochat.webrtc.callbacks.QBRTCClientAudioTracksCallback;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionEventsCallback;
@@ -52,7 +55,7 @@ import id.digilabyte.nibchat.holder.QBUsersHolder;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class CallActivity extends AppCompatActivity implements QBRTCSessionStateCallback, QBRTCClientVideoTracksCallbacks, QBRTCSessionEventsCallback, QBRTCClientSessionCallbacks{
+public class CallActivity extends AppCompatActivity implements QBRTCSessionStateCallback, QBRTCClientVideoTracksCallbacks, QBRTCSessionEventsCallback, QBRTCClientSessionCallbacks, QBRTCClientAudioTracksCallback {
 
     private static final String TAG = CallActivity.class.getSimpleName();
     public static final int REQUEST_PERMISSION_SETTING = 545;
@@ -210,6 +213,7 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
         qbrtcSession.addSessionCallbacksListener(this);
         qbrtcSession.addVideoTrackCallbacksListener(this);
+        qbrtcSession.addAudioTrackCallbacksListener(this);
 
         qbrtcSession.startCall(new HashMap<>());
 
@@ -220,6 +224,9 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             @Override
             public void onClick(View v) {
                 qbrtcSession.rejectCall(new HashMap<>());
+
+                qbrtcSession.removeVideoTrackCallbacksListener(CallActivity.this);
+                qbrtcSession.removeAudioTrackCallbacksListener(CallActivity.this);
 
                 qbrtcSession.removeSignalingCallback(new QBRTCSignalingCallback() {
                     @Override
@@ -389,5 +396,15 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
     private void fillVideoView(int userId, QBRTCSurfaceView videoView, QBRTCVideoTrack videoTrack) {
         videoTrack.addRenderer(new VideoRenderer(videoView));
+    }
+
+    @Override
+    public void onLocalAudioTrackReceive(BaseSession baseSession, QBRTCAudioTrack qbrtcAudioTrack) {
+
+    }
+
+    @Override
+    public void onRemoteAudioTrackReceive(BaseSession baseSession, QBRTCAudioTrack qbrtcAudioTrack, Integer integer) {
+
     }
 }
