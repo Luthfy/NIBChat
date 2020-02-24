@@ -238,8 +238,10 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu_user_chat, menu);
+        if (qbChatDialog.getOccupants().size() < 3) {
+            MenuInflater inflater = getMenuInflater();
+            inflater.inflate(R.menu.menu_user_chat, menu);
+        }
         return true;
     }
 

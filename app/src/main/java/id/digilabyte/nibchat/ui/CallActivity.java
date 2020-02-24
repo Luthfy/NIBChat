@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.Manifest;
 import android.content.Intent;
 import android.os.Bundle;
+import android.telecom.Call;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -18,12 +19,15 @@ import com.quickblox.chat.QBSignaling;
 import com.quickblox.chat.listeners.QBVideoChatSignalingManagerListener;
 import com.quickblox.chat.model.QBChatDialog;
 import com.quickblox.users.model.QBUser;
+import com.quickblox.videochat.webrtc.AppRTCAudioManager;
 import com.quickblox.videochat.webrtc.BaseSession;
+import com.quickblox.videochat.webrtc.QBRTCAudioTrack;
 import com.quickblox.videochat.webrtc.QBRTCClient;
 import com.quickblox.videochat.webrtc.QBRTCConfig;
 import com.quickblox.videochat.webrtc.QBRTCSession;
 import com.quickblox.videochat.webrtc.QBRTCTypes;
 import com.quickblox.videochat.webrtc.QBSignalingSpec;
+import com.quickblox.videochat.webrtc.callbacks.QBRTCClientAudioTracksCallback;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientSessionCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCClientVideoTracksCallbacks;
 import com.quickblox.videochat.webrtc.callbacks.QBRTCSessionEventsCallback;
@@ -47,7 +51,7 @@ import id.digilabyte.nibchat.holder.QBUsersHolder;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class CallActivity extends AppCompatActivity implements QBRTCSessionStateCallback, QBRTCClientVideoTracksCallbacks, QBRTCSessionEventsCallback, QBRTCClientSessionCallbacks{
+public class CallActivity extends AppCompatActivity implements QBRTCSessionStateCallback, QBRTCClientVideoTracksCallbacks, QBRTCSessionEventsCallback, QBRTCClientSessionCallbacks, QBRTCClientAudioTracksCallback {
 
     private static final String TAG = CallActivity.class.getSimpleName();
     public static final int REQUEST_PERMISSION_SETTING = 545;
@@ -65,7 +69,8 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
     private boolean doCallUser;
     private EglBase eglContext;
     private String type;
-    private String currentUserId;
+    private AppRTCAudioManager audioManager;
+    private boolean previousDeviceEarPiece;
 
     String[] perms = {
             Manifest.permission.CAMERA,
@@ -76,6 +81,9 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.ACCESS_WIFI_STATE
     };
+
+    private boolean isVideoCall;
+    private boolean headsetPlugged;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,6 +133,42 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
         QBRTCConfig.setDebugEnabled(true);
 
         Log.d(TAG, "Init Field Activity, Do Call User : "+doCallUser);
+
+        initAudioManager();
+    }
+
+    private void initAudioManager() {
+        audioManager = AppRTCAudioManager.create(CallActivity.this, new AppRTCAudioManager.OnAudioManagerStateListener() {
+            @Override
+            public void onAudioChangedState(AppRTCAudioManager.AudioDevice audioDevice) {
+                if (audioManager.getSelectedAudioDevice() == AppRTCAudioManager.AudioDevice.EARPIECE) {
+                    previousDeviceEarPiece = true;
+                } else if (audioManager.getSelectedAudioDevice() == AppRTCAudioManager.AudioDevice.SPEAKER_PHONE) {
+                    previousDeviceEarPiece = false;
+                }
+
+            }
+        });
+
+        isVideoCall = QBRTCTypes.QBConferenceType.QB_CONFERENCE_TYPE_VIDEO.equals(qbConferenceType);
+        if (isVideoCall) {
+            audioManager.setDefaultAudioDevice(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+            Log.d(TAG, "AppRTCAudioManager.AudioDevice.SPEAKER_PHONE");
+        } else {
+            audioManager.setDefaultAudioDevice(AppRTCAudioManager.AudioDevice.EARPIECE);
+            previousDeviceEarPiece = true;
+            Log.d(TAG, "AppRTCAudioManager.AudioDevice.EARPIECE");
+        }
+
+        audioManager.setOnWiredHeadsetStateListener(new AppRTCAudioManager.OnWiredHeadsetStateListener() {
+            @Override
+            public void onWiredHeadsetStateChanged(boolean plugged, boolean hasMicrophone) {
+                Log.d(TAG, "Plugged "+plugged+" Microphone "+hasMicrophone);
+                headsetPlugged = plugged;
+            }
+        });
+
+        audioManager.init();
     }
 
     private void openCall() {
@@ -135,7 +179,8 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
         String sessionId = getIntent().getStringExtra(Common.SESSION_CHAT);
 
-        qbrtcSession = qbrtcClient.getSession(sessionId);
+        qbrtcSession        = qbrtcClient.getSession(sessionId);
+        qbConferenceType    = qbrtcSession.getConferenceType();
 
         qbChatService.getVideoChatWebRTCSignalingManager().addSignalingManagerListener(new QBVideoChatSignalingManagerListener() {
             @Override
@@ -229,7 +274,10 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
                     }
                 });
 
+                onReleaseEgl();
+
                 qbrtcSession.removeVideoTrackCallbacksListener(CallActivity.this);
+                qbrtcSession.removeAudioTrackCallbacksListener(CallActivity.this);
 
                 qbrtcClient.destroy();
 
@@ -274,6 +322,10 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
             btnCall.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    onReleaseEgl();
+                    qbrtcSession.removeVideoTrackCallbacksListener(CallActivity.this);
+                    qbrtcSession.removeAudioTrackCallbacksListener(CallActivity.this);
+                    qbrtcClient.destroy();
                     qbrtcSession.rejectCall(new HashMap<>());
                     onBackPressed();
                 }
@@ -288,9 +340,6 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
         Toast.makeText(CallActivity.this, "Panggilan dihentikan", Toast.LENGTH_SHORT).show();
 
         onBackPressed();
-
-        qbrtcSurfaceViewOpponent.release();
-        qbrtcSurfaceViewLocal.release();
     }
 
     @Override
@@ -397,5 +446,20 @@ public class CallActivity extends AppCompatActivity implements QBRTCSessionState
 
     private void fillVideoView(int userId, QBRTCSurfaceView videoView, QBRTCVideoTrack videoTrack) {
         videoTrack.addRenderer(new VideoRenderer(videoView));
+    }
+
+    private void onReleaseEgl() {
+        qbrtcSurfaceViewOpponent.release();
+        qbrtcSurfaceViewLocal.release();
+    }
+
+    @Override
+    public void onLocalAudioTrackReceive(BaseSession baseSession, QBRTCAudioTrack qbrtcAudioTrack) {
+
+    }
+
+    @Override
+    public void onRemoteAudioTrackReceive(BaseSession baseSession, QBRTCAudioTrack qbrtcAudioTrack, Integer integer) {
+
     }
 }
