@@ -310,7 +310,7 @@ public class ChatDialogActivity extends AppCompatActivity implements View.OnClic
         return true;
     }
 
-    private void logoutMethod() {
+    public void logoutMethod() {
         AlertDialog.Builder dialog = new AlertDialog.Builder(this, AlertDialog.THEME_HOLO_LIGHT);
         dialog.setTitle("Logout");
         dialog.setMessage("Are you sure?");

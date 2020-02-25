@@ -185,7 +185,13 @@ public class ChatMessageActivity extends AppCompatActivity implements View.OnCli
     public void onClick(View v) {
         if (!isEditMode) {
             QBChatMessage qbChatMessage = new QBChatMessage();
-            qbChatMessage.setBody(edtContent.getText().toString());
+
+            if (edtContent.getText().toString().isEmpty()) {
+                qbChatMessage.setBody(" ");
+            } else {
+                qbChatMessage.setBody(edtContent.getText().toString());
+            }
+
             qbChatMessage.setSenderId(QBChatService.getInstance().getUser().getId());
             qbChatMessage.setSaveToHistory(true);
 

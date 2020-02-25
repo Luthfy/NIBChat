@@ -7,8 +7,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.telecom.Call;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -35,6 +37,7 @@ import java.util.ArrayList;
 import id.digilabyte.nibchat.R;
 import id.digilabyte.nibchat.adapter.ListUserAdapter;
 import id.digilabyte.nibchat.helper.Common;
+import id.digilabyte.nibchat.utils.UserPreferences;
 
 public class ListUserActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -64,6 +67,7 @@ public class ListUserActivity extends AppCompatActivity implements View.OnClickL
     }
 
     private void retrieveUser() {
+
         final ProgressDialog loading = new ProgressDialog(this, ProgressDialog.THEME_HOLO_LIGHT);
         loading.setMessage("Please wait ...");
         loading.setCanceledOnTouchOutside(false);
@@ -72,21 +76,30 @@ public class ListUserActivity extends AppCompatActivity implements View.OnClickL
         QBUsers.getUsers(null).performAsync(new QBEntityCallback<ArrayList<QBUser>>() {
             @Override
             public void onSuccess(ArrayList<QBUser> qbUsers, Bundle bundle) {
+
+                Log.d("ListUserActivity", "list user : "+qbUsers.toString());
+
                 ArrayList<QBUser> qbUsersWithoutCurrent = new ArrayList<>();
-                if (qbUsers != null) {
-                    for (Integer i = 0; i < qbUsers.size(); i++) {
-                        QBUser user = qbUsers.get(i);
-                        if (!user.getLogin().equals(QBChatService.getInstance().getUser().getLogin())) {
-                            qbUsersWithoutCurrent.add(user);
-                        }
+
+                for (int i = 0; i < qbUsers.size(); i++) {
+
+                    QBUser user = qbUsers.get(i);
+
+                    boolean getLogin = user.getLogin().equals(QBChatService.getInstance().getUser().getLogin());
+
+                    Log.d("ListUserActivity", "user was login : " + getLogin);
+
+                    if (!getLogin) {
+                        Log.d("ListUserActivity", "list user : " + user.toString());
+                        qbUsersWithoutCurrent.add(user);
                     }
-
-                    ListUserAdapter adapter = new ListUserAdapter(ListUserActivity.this, qbUsersWithoutCurrent);
-                    rcUserList.setAdapter(adapter);
-
-                    adapter.notifyDataSetChanged();
-                    loading.dismiss();
                 }
+
+                ListUserAdapter adapter = new ListUserAdapter(ListUserActivity.this, qbUsersWithoutCurrent);
+                rcUserList.setAdapter(adapter);
+
+                adapter.notifyDataSetChanged();
+                loading.dismiss();
             }
 
             @Override
@@ -221,6 +234,11 @@ public class ListUserActivity extends AppCompatActivity implements View.OnClickL
                 } catch (SmackException.NotConnectedException e) {
                     e.printStackTrace();
                 }
+
+                Intent intent = new Intent(ListUserActivity.this, ChatMessageActivity.class);
+                intent.putExtra(Common.DIALOG_EXTRA, qbChatDialog);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
 
                 finish();
             }
